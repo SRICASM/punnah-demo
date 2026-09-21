@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Punnah — the journey (Phase B demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Rozha+One&family=Mukta:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cobalt:#123C8C; --cobalt-dk:#0A2559;
+  --vermilion:#D62A20; --vermilion-dk:#9B1710;
+  --marigold:#F2A20C; --marigold-lt:#FFC845;
+  --emerald:#0B7A52; --emerald-lt:#12A874;
+  --rani:#D6006D; --turq:#0E8F9E; --gold:#C99A2E;
+  --cream:#F6E8CC; --ink:#120C08; --white:#FFF8EA;
+  --outline:2px solid var(--ink);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Mukta',system-ui,sans-serif;
+  background:var(--ink); color:var(--white);
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.display{font-family:'Yatra One',cursive}
+.deva{font-family:'Rozha One',serif}
+
+/* ---------------- fixed visual stage ---------------- */
+.stage{position:fixed;inset:0;z-index:0;background:var(--ink)}
+.stage svg{width:100%;height:100%;display:block}
+
+/* ---------------- scrolling copy ---------------- */
+main{position:relative;z-index:2}
+section{
+  min-height:110vh;display:grid;align-items:center;
+  padding:0 clamp(1.2rem,5vw,6rem);
+}
+.panel{
+  max-width:26rem;
+  background:linear-gradient(180deg,rgba(18,12,8,.86),rgba(18,12,8,.72));
+  border:var(--outline);border-left:6px solid var(--marigold);
+  box-shadow:0 3px 0 var(--ink),0 18px 40px rgba(0,0,0,.5);
+  padding:1.5rem 1.6rem 1.7rem;
+  opacity:.25;transform:translateY(14px);
+  transition:opacity .5s ease,transform .5s ease;
+}
+section.is-active .panel{opacity:1;transform:none}
+.eyebrow{
+  font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--marigold-lt);margin-bottom:.6rem
+}
+.panel h2{
+  font-family:'Yatra One',cursive;font-weight:400;
+  font-size:clamp(1.6rem,3.4vw,2.5rem);line-height:1.04;
+  color:var(--white);text-shadow:2px 2px 0 var(--ink);
+}
+.panel .script{
+  font-family:'Rozha One',serif;font-size:1.5rem;color:var(--marigold);
+  margin:.45rem 0 .7rem;line-height:1
+}
+.panel p{font-size:1rem;line-height:1.55;color:var(--cream);font-weight:300}
+.weave{
+  margin-top:1rem;display:inline-flex;gap:.5rem;align-items:center;
+  font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink);background:var(--marigold);
+  border:var(--outline);padding:.35rem .7rem
+}
+
+/* ---------------- chapter rail ---------------- */
+.rail{
+  position:fixed;right:clamp(.6rem,2vw,1.6rem);top:50%;translate:0 -50%;
+  z-index:5;display:flex;flex-direction:column;gap:.55rem
+}
+.rail button{
+  width:13px;height:13px;border-radius:50%;cursor:pointer;
+  border:2px solid var(--ink);background:rgba(246,232,204,.35);
+  padding:0;transition:background .25s,scale .25s
+}
+.rail button[aria-current="true"]{background:var(--marigold);scale:1.35}
+.rail button:focus-visible{outline:3px solid var(--marigold-lt);outline-offset:3px}
+
+/* ---------------- progress + readout ---------------- */
+.prog{position:fixed;left:0;top:0;height:5px;z-index:6;
+  background:linear-gradient(90deg,var(--marigold),var(--rani));width:0}
+.hud{
+  position:fixed;left:1rem;bottom:1rem;z-index:6;font-size:.68rem;
+  letter-spacing:.1em;color:var(--marigold);background:rgba(18,12,8,.8);
+  border:1px solid var(--gold);padding:.4rem .6rem;font-variant-numeric:tabular-nums
+}
+.skip{position:absolute;left:-9999px;top:0;background:var(--marigold);color:var(--ink);
+  padding:.6rem 1rem;z-index:20}
+.skip:focus{left:1rem;top:1rem}
+
+/* outro — opaque so it covers the fixed stage cleanly */
+.outro{
+  position:relative;z-index:3;min-height:100vh;
+  display:grid;place-items:center;text-align:center;padding:2rem;
+  background:linear-gradient(180deg,rgba(18,12,8,0) 0%,var(--ink) 34%,var(--ink) 100%);
+}
+.cta{
+  display:inline-block;padding:.85rem 1.6rem;border:var(--outline);
+  background:var(--marigold);color:var(--ink);text-decoration:none;
+  font-family:'Yatra One',cursive;font-size:1.05rem;
+  box-shadow:0 3px 0 var(--ink),0 10px 22px rgba(0,0,0,.35);
+}
+.cta:focus-visible{outline:3px solid var(--marigold-lt);outline-offset:3px}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .panel{transition:none;opacity:1;transform:none}
+}
+@media (max-width:640px){
+  .panel{max-width:100%;background:rgba(18,12,8,.9)}
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#end">Skip the journey — go to the shop</a>
+<div class="prog" id="prog"></div>
+
+<!-- ============ STAGE ============ -->
+<div class="stage" aria-hidden="true">
+<svg id="world" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop id="skyTop" offset="0" stop-color="#2A2140"/>
+      <stop id="skyBot" offset="1" stop-color="#E8913C"/>
+    </linearGradient>
+    <linearGradient id="hazeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop id="hazeA" offset="0" stop-color="#F2C078" stop-opacity="0"/>
+      <stop id="hazeB" offset="1" stop-color="#F2C078" stop-opacity=".95"/>
+    </linearGradient>
+    <radialGradient id="sunGlow">
+      <stop id="glowA" offset="0" stop-color="#FFD98A" stop-opacity=".85"/>
+      <stop id="glowB" offset="1" stop-color="#FFD98A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+    <linearGradient id="roadG" x1="0" y1="0" x2="0" y2="1">
+      <stop id="roadA" offset="0" stop-color="#2A1E14"/>
+      <stop id="roadB" offset="1" stop-color="#120C08"/>
+    </linearGradient>
+  </defs>
+
+  <!-- sky -->
+  <rect id="skyRect" x="0" y="0" width="1600" height="900" fill="url(#sky)"/>
+  <g id="stars" opacity="0"></g>
+  <circle id="sunGlowC" cx="1150" cy="520" r="220" fill="url(#sunGlow)"/>
+  <circle id="sun" cx="1150" cy="520" r="54" fill="#FFD98A"/>
+
+  <!-- far landmark silhouettes, one group per chapter -->
+  <g id="lands"></g>
+
+  <!-- atmospheric haze band over the horizon -->
+  <rect id="haze" x="0" y="430" width="1600" height="220" fill="url(#hazeGrad)" opacity=".3"/>
+
+  <!-- ground -->
+  <rect id="ground" x="0" y="620" width="1600" height="280" fill="#3A2A1C"/>
+
+  <!-- road -->
+  <path id="road" d="M640 620 L960 620 L1420 900 L180 900 Z" fill="url(#roadG)"/>
+  <g id="dashes"></g>
+
+  <!-- weather -->
+  <g id="rain" opacity="0"></g>
+  <g id="dust" opacity="0"></g>
+  <g id="mist" opacity="0"></g>
+  <rect id="glare" x="0" y="0" width="1600" height="900" fill="#FFFFFF" opacity="0"/>
+
+  <!-- the truck, seen from behind -->
+  <g id="truck" transform="translate(800 640)">
+    <!-- shadow -->
+    <ellipse cx="0" cy="182" rx="180" ry="20" fill="#000" opacity=".4"/>
+    <!-- chassis -->
+    <rect x="-166" y="-250" width="332" height="410" fill="#0A2559" stroke="#120C08" stroke-width="5"/>
+    <!-- header board -->
+    <rect x="-186" y="-300" width="372" height="56" fill="#D62A20" stroke="#120C08" stroke-width="5"/>
+    <text x="0" y="-259" text-anchor="middle" font-family="Yatra One" font-size="40" fill="#F2A20C" stroke="#120C08" stroke-width="1.2">PUNNAH</text>
+    <!-- scalloped valance under the board -->
+    <g id="valance"></g>
+    <!-- upper colour strip -->
+    <g>
+      <rect x="-166" y="-232" width="332" height="20" fill="#0B7A52"/>
+      <rect x="-166" y="-212" width="332" height="10" fill="#FFF8EA"/>
+      <rect x="-166" y="-202" width="332" height="16" fill="#D6006D"/>
+    </g>
+    <!-- twin doors -->
+    <rect x="-160" y="-180" width="155" height="300" fill="#123C8C" stroke="#120C08" stroke-width="4"/>
+    <rect x="5"    y="-180" width="155" height="300" fill="#123C8C" stroke="#120C08" stroke-width="4"/>
+    <!-- medallions -->
+    <g id="medL" transform="translate(-82 -34)"></g>
+    <g id="medR" transform="translate(83 -34)"></g>
+    <!-- painted phrases -->
+    <text x="-82" y="100" text-anchor="middle" font-family="Yatra One" font-size="19" fill="#FFC845">HORN ✺ OK</text>
+    <text x="83"  y="100" text-anchor="middle" font-family="Yatra One" font-size="19" fill="#FFC845">PLEASE</text>
+    <text x="0" y="-148" text-anchor="middle" font-family="Rozha One" font-size="17" fill="#F6E8CC">बुरी नज़र वाले तेरा मुँह काला</text>
+    <!-- mirror-work rows -->
+    <g id="mirrors"></g>
+    <!-- lower strip -->
+    <rect x="-166" y="122" width="332" height="14" fill="#F2A20C"/>
+    <rect x="-166" y="136" width="332" height="9"  fill="#0E8F9E"/>
+    <!-- tail lights -->
+    <circle id="lampL" cx="-130" cy="158" r="13" fill="#D62A20" stroke="#120C08" stroke-width="3"/>
+    <circle id="lampR" cx="130"  cy="158" r="13" fill="#D62A20" stroke="#120C08" stroke-width="3"/>
+    <!-- bumper -->
+    <rect x="-182" y="146" width="364" height="28" fill="#C99A2E" stroke="#120C08" stroke-width="4"/>
+    <!-- mudflaps -->
+    <rect x="-176" y="174" width="96" height="44" rx="6" fill="#17110C" stroke="#120C08" stroke-width="3"/>
+    <rect x="80"   y="174" width="96" height="44" rx="6" fill="#17110C" stroke="#120C08" stroke-width="3"/>
+    <text x="-128" y="201" text-anchor="middle" font-family="Yatra One" font-size="15" fill="#F2A20C">WOVEN</text>
+    <text x="128"  y="201" text-anchor="middle" font-family="Yatra One" font-size="15" fill="#F2A20C">IN INDIA</text>
+    <!-- chain fringe -->
+    <g id="chains"></g>
+  </g>
+
+  <rect x="0" y="0" width="1600" height="900" fill="url(#vig)" pointer-events="none"/>
+</svg>
+</div>
+
+<!-- ============ SCROLLING COPY ============ -->
+<main id="story"></main>
+<section id="end" class="outro">
+  <div>
+    <p class="display" style="font-size:clamp(1.6rem,4vw,2.8rem);color:var(--marigold)">The road ends at a loom.</p>
+    <p style="margin-top:.6rem;color:var(--cream)">Eight states. Eight weaves. One road.</p>
+    <p style="margin-top:1.6rem"><a class="cta" href="#">Shop sarees</a></p>
+  </div>
+</section>
+
+<nav class="rail" id="rail" aria-label="Journey chapters"></nav>
+<div class="hud" id="hud">p 0.00</div>
+
+<script>
+/* Portable native-scroll conductor for a persistent multi-chapter WebGL world.
+   It has no Three.js dependency. Give it semantic section elements and render
+   the returned exact/smoothed progress through your own camera/world systems.
+
+   Usage:
+     const conductor = createScrollConductor({
+       sections: document.querySelectorAll('[data-cam]'),
+       damping: 5.2,
+       reducedMotion: matchMedia('(prefers-reduced-motion:reduce)').matches,
+       onUpdate(state) { updateWorld(state); },
+       onChapterChange(index, state) { updateDOM(index, state); }
+     });
+     conductor.start();
+*/
+(function (root, factory) {
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = { createScrollConductor: factory() };
+  } else {
+    root.createScrollConductor = factory();
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function damp(current, target, lambda, dt) {
+    return current + (target - current) * (1 - Math.exp(-lambda * dt));
+  }
+
+  function createScrollConductor(options) {
+    options = options || {};
+
+    var sections = Array.from(options.sections || []);
+    if (!sections.length) throw new Error("createScrollConductor requires sections");
+
+    var damping = Number.isFinite(options.damping) ? options.damping : 5.2;
+    var reduce = Boolean(options.reducedMotion);
+    var onUpdate = typeof options.onUpdate === "function" ? options.onUpdate : function () {};
+    var onChapterChange = typeof options.onChapterChange === "function"
+      ? options.onChapterChange
+      : function () {};
+    var getY = typeof options.getScrollY === "function"
+      ? options.getScrollY
+      : function () { return window.scrollY || window.pageYOffset || 0; };
+
+    var anchors = [];
+    var exact = 0;
+    var smooth = 0;
+    var direction = 0;
+    var previousY = 0;
+    var active = -1;
+    var running = false;
+    var frame = 0;
+    var lastTime = 0;
+    var dirty = true;
+    var widthAtMeasure = 0;
+    var resizeObserver = null;
+
+    function maxScroll() {
+      return Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    }
+
+    function measure() {
+      var max = maxScroll();
+      widthAtMeasure = window.innerWidth;
+      anchors = sections.map(function (element, index) {
+        if (index === 0) return 0;
+        if (index === sections.length - 1) return max;
+        var value = element.offsetTop + element.offsetHeight * 0.5 - window.innerHeight * 0.5;
+        return clamp(value, 0, max);
+      });
+
+      for (var index = 1; index < anchors.length; index += 1) {
+        anchors[index] = Math.max(anchors[index], anchors[index - 1] + 1);
+      }
+
+      dirty = true;
+      return anchors.slice();
+    }
+
+    function progressAt(y) {
+      if (!anchors.length) measure();
+      y = clamp(y, 0, maxScroll());
+      if (y <= anchors[0]) return 0;
+
+      for (var index = 0; index < anchors.length - 1; index += 1) {
+        if (y <= anchors[index + 1]) {
+          var span = Math.max(1, anchors[index + 1] - anchors[index]);
+          return index + clamp((y - anchors[index]) / span, 0, 1);
+        }
+      }
+      return anchors.length - 1;
+    }
+
+    function segment(progress) {
+      var last = sections.length - 1;
+      var index = clamp(Math.floor(progress), 0, last);
+      var next = Math.min(last, index + 1);
+      return {
+        index: index,
+        next: next,
+        local: next === index ? 0 : clamp(progress - index, 0, 1)
+      };
+    }
+
+    function state() {
+      var exactSegment = segment(exact);
+      var smoothSegment = segment(smooth);
+      return {
+        exact: exact,
+        smooth: smooth,
+        index: exactSegment.index,
+        next: exactSegment.next,
+        localExact: exactSegment.local,
+        smoothIndex: smoothSegment.index,
+        smoothNext: smoothSegment.next,
+        localSmooth: smoothSegment.local,
+        direction: direction,
+        anchors: anchors
+      };
+    }
+
+    function readScroll() {
+      var y = getY();
+      var delta = y - previousY;
+      if (Math.abs(delta) > 0.25) direction = delta > 0 ? 1 : -1;
+      previousY = y;
+      exact = progressAt(y);
+      dirty = true;
+    }
+
+    function tick(now) {
+      if (!running) return;
+      var dt = lastTime ? Math.min((now - lastTime) / 1000, 1 / 30) : 1 / 60;
+      lastTime = now;
+
+      var previousSmooth = smooth;
+      smooth = reduce ? exact : damp(smooth, exact, damping, dt);
+      if (Math.abs(smooth - exact) < 0.0001) smooth = exact;
+
+      var nextState = state();
+      if (nextState.index !== active) {
+        active = nextState.index;
+        onChapterChange(active, nextState);
+      }
+
+      if (dirty || smooth !== previousSmooth) {
+        dirty = false;
+        onUpdate(nextState);
+      }
+
+      frame = requestAnimationFrame(tick);
+    }
+
+    function onScroll() {
+      readScroll();
+    }
+
+    function onResize() {
+      var widthChanged = window.innerWidth !== widthAtMeasure;
+      var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+      if (coarse && !widthChanged) return;
+      measure();
+      readScroll();
+    }
+
+    function onVisibility() {
+      if (document.hidden) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        lastTime = 0;
+        return;
+      }
+      if (running && !frame) frame = requestAnimationFrame(tick);
+      readScroll();
+    }
+
+    function start() {
+      if (running) return api;
+      running = true;
+      measure();
+      previousY = getY();
+      exact = progressAt(previousY);
+      smooth = reduce ? exact : exact;
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onResize, { passive: true });
+      window.addEventListener("orientationchange", onResize, { passive: true });
+      window.addEventListener("pageshow", onResize);
+      window.addEventListener("hashchange", onResize);
+      document.addEventListener("visibilitychange", onVisibility);
+
+      if (typeof ResizeObserver !== "undefined") {
+        resizeObserver = new ResizeObserver(function () {
+          measure();
+          readScroll();
+        });
+        sections.forEach(function (section) { resizeObserver.observe(section); });
+      }
+
+      active = -1;
+      lastTime = 0;
+      frame = requestAnimationFrame(tick);
+      return api;
+    }
+
+    function stop() {
+      if (!running) return;
+      running = false;
+      cancelAnimationFrame(frame);
+      frame = 0;
+
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      window.removeEventListener("pageshow", onResize);
+      window.removeEventListener("hashchange", onResize);
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (resizeObserver) resizeObserver.disconnect();
+      resizeObserver = null;
+    }
+
+    function setReducedMotion(value) {
+      reduce = Boolean(value);
+      if (reduce) smooth = exact;
+      dirty = true;
+    }
+
+    function goTo(index, behavior) {
+      index = clamp(Math.round(index), 0, anchors.length - 1);
+      window.scrollTo({
+        top: anchors[index],
+        behavior: reduce ? "auto" : (behavior || "smooth")
+      });
+    }
+
+    var api = {
+      start: start,
+      stop: stop,
+      destroy: stop,
+      measure: measure,
+      read: readScroll,
+      getState: state,
+      progressAt: progressAt,
+      goTo: goTo,
+      setReducedMotion: setReducedMotion
+    };
+
+    return api;
+  }
+
+  return createScrollConductor;
+});
+
+</script>
+<script>
+/* Punnah — chapter ledger.
+   One row per authored state. Fields follow world-bible.md §4.
+   This file is renderer-agnostic on purpose: the 2D SVG demo and the later
+   Three.js world both read it. Copy here is PLACEHOLDER pending journey/chapter-narrative.md.
+*/
+window.PUNNAH_CHAPTERS = [
+  {
+    id: "varanasi",
+    region: "Uttar Pradesh",
+    weave: "Banarasi",
+    beat: "The road begins where the silk does.",
+    landmark: "ghat-steps",
+    change: "First light on the river. The truck is loaded and has not moved yet.",
+    scrollWeight: 1.2,
+    time: "dawn",
+    world: {
+      skyTop: "#2A2140", skyBot: "#E8913C", haze: "#F2C078",
+      ground: "#3A2A1C", road: "#2A1E14",
+      sunY: 0.72, sunR: 54, sunColor: "#FFD98A", sunOpacity: 1,
+      fog: 0.22, rain: 0, dust: 0.05, stars: 0.12, glare: 0
+    },
+    copy: {
+      eyebrow: "01 / Varanasi",
+      head: "Where the silk starts.",
+      body: "Zari is wound before the light is. The loom in this lane has been in one family for four generations."
+    },
+    script: "बनारसी"
+  },
+  {
+    id: "bengal",
+    region: "West Bengal",
+    weave: "Jamdani · Baluchari",
+    beat: "Weather arrives. So does the finest cotton in the country.",
+    landmark: "delta-palms",
+    change: "Monsoon. Green floods the palette and the road turns reflective.",
+    scrollWeight: 1.1,
+    time: "rain",
+    world: {
+      skyTop: "#243A3F", skyBot: "#6E8B6A", haze: "#9DB89A",
+      ground: "#1F3326", road: "#22302C",
+      sunY: 0.5, sunR: 42, sunColor: "#CFE0B8", sunOpacity: 0.35,
+      fog: 0.42, rain: 1, dust: 0, stars: 0, glare: 0
+    },
+    copy: {
+      eyebrow: "02 / Bengal",
+      head: "Thread you can read through.",
+      body: "Jamdani is figured on the loom itself, by hand, with no jacquard. The pattern exists nowhere but in the weaver's count."
+    },
+    script: "জামদানি"
+  },
+  {
+    id: "assam",
+    region: "Assam",
+    weave: "Muga",
+    beat: "A silk that is gold on its own, without dye.",
+    landmark: "tea-hills",
+    change: "The land lifts. Mist sits in the folds between hills.",
+    scrollWeight: 1.15,
+    time: "mist",
+    world: {
+      skyTop: "#5A6E6B", skyBot: "#C9CBB4", haze: "#DDDCC6",
+      ground: "#2E3B2A", road: "#33362E",
+      sunY: 0.42, sunR: 60, sunColor: "#EDE6C4", sunOpacity: 0.5,
+      fog: 0.66, rain: 0, dust: 0, stars: 0, glare: 0.08
+    },
+    copy: {
+      eyebrow: "03 / Sualkuchi",
+      head: "Gold that was never dyed.",
+      body: "Muga comes off the reel that colour. It outlasts the person who wove it, and it is fed by one tree."
+    },
+    script: "মুগা"
+  },
+  {
+    id: "odisha",
+    region: "Odisha",
+    weave: "Sambalpuri ikat",
+    beat: "The pattern is dyed into the yarn before a single pick is thrown.",
+    landmark: "red-earth",
+    change: "Overhead sun. Shadows collapse under the truck.",
+    scrollWeight: 1.0,
+    time: "noon",
+    world: {
+      skyTop: "#4E86C4", skyBot: "#BFD8E8", haze: "#E2D6BE",
+      ground: "#8A4A28", road: "#4A3524",
+      sunY: 0.12, sunR: 38, sunColor: "#FFFFFF", sunOpacity: 1,
+      fog: 0.1, rain: 0, dust: 0.25, stars: 0, glare: 0.3
+    },
+    copy: {
+      eyebrow: "04 / Sambalpur",
+      head: "Tied, dyed, then woven.",
+      body: "Bandha means the yarn is bound and dyed to the design before it reaches the loom. The blur at every edge is the proof."
+    },
+    script: "ସମ୍ବଲପୁରୀ"
+  },
+  {
+    id: "rajasthan",
+    region: "Rajasthan",
+    weave: "Bandhani · Leheriya",
+    beat: "Ten thousand knots, each tied by a fingernail.",
+    landmark: "dunes-fort",
+    change: "Dust takes the air. Colour goes hot and the horizon softens.",
+    scrollWeight: 1.1,
+    time: "dust",
+    world: {
+      skyTop: "#A05A2C", skyBot: "#E8A85C", haze: "#E8C38F",
+      ground: "#9A6134", road: "#6B472A",
+      sunY: 0.3, sunR: 66, sunColor: "#FFCE73", sunOpacity: 0.85,
+      fog: 0.38, rain: 0, dust: 1, stars: 0, glare: 0.18
+    },
+    copy: {
+      eyebrow: "05 / Rajasthan",
+      head: "Counted in knots.",
+      body: "A bandhani odhni can carry ten thousand ties. They are made with a grown-out nail, and they are counted."
+    },
+    script: "बांधणी"
+  },
+  {
+    id: "gujarat",
+    region: "Gujarat",
+    weave: "Patola",
+    beat: "Both warp and weft resist-dyed. Six months for one length.",
+    landmark: "salt-flat",
+    change: "White glare. The ground stops being a colour and becomes light.",
+    scrollWeight: 1.0,
+    time: "glare",
+    world: {
+      skyTop: "#7FA8C9", skyBot: "#EFEFE6", haze: "#FFFFFF",
+      ground: "#E6E2D6", road: "#B9B2A2",
+      sunY: 0.2, sunR: 80, sunColor: "#FFFFFF", sunOpacity: 1,
+      fog: 0.3, rain: 0, dust: 0.15, stars: 0, glare: 1
+    },
+    copy: {
+      eyebrow: "06 / Patan",
+      head: "Six months, one saree.",
+      body: "Double ikat means both sets of yarn are dyed to the pattern and must meet exactly on the loom. Three families still do it."
+    },
+    script: "પટોળા"
+  },
+  {
+    id: "maharashtra",
+    region: "Maharashtra",
+    weave: "Paithani",
+    beat: "The border is woven, not printed — and it is the reason for the saree.",
+    landmark: "deccan-fort",
+    change: "The sun drops behind the plateau. Gold returns, lower and longer.",
+    scrollWeight: 1.15,
+    time: "dusk",
+    world: {
+      skyTop: "#3B2A52", skyBot: "#D9643C", haze: "#E09A5E",
+      ground: "#3E3324", road: "#2C2419",
+      sunY: 0.62, sunR: 72, sunColor: "#FFB25E", sunOpacity: 1,
+      fog: 0.26, rain: 0, dust: 0.3, stars: 0.2, glare: 0
+    },
+    copy: {
+      eyebrow: "07 / Yeola",
+      head: "The border is the point.",
+      body: "A paithani pallu is built peacock by peacock in interlocked tapestry. No float threads run behind it — there is no back to hide."
+    },
+    script: "पैठणी"
+  },
+  {
+    id: "kanchipuram",
+    region: "Tamil Nadu",
+    weave: "Kanjeevaram",
+    beat: "Arrival. Body and border woven separately, then locked together.",
+    landmark: "gopuram",
+    change: "Night. Temple lights. The truck stops for the first time.",
+    scrollWeight: 1.4,
+    time: "night",
+    world: {
+      skyTop: "#0B1230", skyBot: "#2A2A5E", haze: "#3E3A6B",
+      ground: "#171326", road: "#0E0C18",
+      sunY: 0.78, sunR: 30, sunColor: "#E8E4FF", sunOpacity: 0.9,
+      fog: 0.2, rain: 0, dust: 0, stars: 1, glare: 0
+    },
+    copy: {
+      eyebrow: "08 / Kanchipuram",
+      head: "The road ends at a loom.",
+      body: "Body and border are woven as separate pieces and joined at the korvai. Pull hard enough and the saree tears before the join does."
+    },
+    script: "காஞ்சிபுரம்"
+  }
+];
+
+</script>
+<script>
+(function(){
+  "use strict";
+  var CH = window.PUNNAH_CHAPTERS;
+  var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function el(n,a){var e=document.createElementNS(SVGNS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
+  function clamp(v,a,b){return Math.min(b,Math.max(a,v));}
+
+  /* ---------- colour helpers ---------- */
+  function hex2rgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+  function mix(a,b,t){var A=hex2rgb(a),B=hex2rgb(b);
+    return 'rgb('+Math.round(A[0]+(B[0]-A[0])*t)+','+Math.round(A[1]+(B[1]-A[1])*t)+','+Math.round(A[2]+(B[2]-A[2])*t)+')';}
+  function lerp(a,b,t){return a+(b-a)*t;}
+
+  /* ---------- build DOM: sections + rail ---------- */
+  var story=document.getElementById('story'), rail=document.getElementById('rail');
+  CH.forEach(function(c,i){
+    var s=document.createElement('section');
+    s.dataset.chapter=c.id; s.id='ch-'+c.id;
+    s.style.minHeight=(c.scrollWeight*100)+'vh';
+    s.innerHTML='<div class="panel">'+
+      '<p class="eyebrow">'+c.copy.eyebrow+'</p>'+
+      '<h2>'+c.copy.head+'</h2>'+
+      '<p class="script">'+c.script+'</p>'+
+      '<p>'+c.copy.body+'</p>'+
+      '<span class="weave">'+c.weave+' · '+c.region+'</span></div>';
+    story.appendChild(s);
+    var b=document.createElement('button');
+    b.type='button'; b.setAttribute('aria-label','Chapter '+(i+1)+': '+c.region+', '+c.weave);
+    b.addEventListener('click',function(){conductor.goTo(i);});
+    rail.appendChild(b);
+  });
+
+  /* ---------- build truck ornament ---------- */
+  var val=document.getElementById('valance');
+  for(var v=0;v<21;v++) val.appendChild(el('circle',{cx:-186+18+v*18,cy:-244,r:9,fill:'#F2A20C'}));
+  function medallion(g){
+    g.appendChild(el('circle',{r:52,fill:'#0A2559',stroke:'#C99A2E','stroke-width':4}));
+    for(var i=0;i<12;i++){
+      var a=i/12*Math.PI*2;
+      g.appendChild(el('ellipse',{cx:Math.cos(a)*30,cy:Math.sin(a)*30,rx:14,ry:7,
+        fill:i%2?'#D6006D':'#12A874',transform:'rotate('+(a*180/Math.PI)+' '+Math.cos(a)*30+' '+Math.sin(a)*30+')'}));
+    }
+    g.appendChild(el('circle',{r:16,fill:'#F2A20C',stroke:'#120C08','stroke-width':3}));
+    g.appendChild(el('circle',{r:6,fill:'#D62A20'}));
+  }
+  medallion(document.getElementById('medL'));
+  medallion(document.getElementById('medR'));
+  var mir=document.getElementById('mirrors');
+  for(var m=0;m<15;m++){
+    mir.appendChild(el('circle',{cx:-150+m*21.5,cy:-166,r:6,fill:'#FFF8EA',stroke:'#C99A2E','stroke-width':2}));
+    mir.appendChild(el('circle',{cx:-150+m*21.5,cy:114,r:5,fill:'#FFC845',stroke:'#120C08','stroke-width':1.5}));
+  }
+  var chains=document.getElementById('chains');
+  for(var c2=0;c2<13;c2++){
+    var g=el('g',{transform:'translate('+(-160+c2*27)+' 218)',class:'chain'});
+    for(var k=0;k<4;k++) g.appendChild(el('ellipse',{cx:0,cy:k*9,rx:4,ry:6,fill:'none',stroke:'#C99A2E','stroke-width':2.5}));
+    chains.appendChild(g);
+  }
+
+  /* ---------- landmark silhouettes, one group per chapter ---------- */
+  var LAND = {
+    "ghat-steps":     'M0 620 h300 l0-40 h60 l0-60 h40 l0-70 l30-50 l30 50 l0 70 h40 l0 60 h60 l0 40 h260 l0-30 h50 l20-60 l20 60 h50 l0 30 h640 v60 H0 Z',
+    "delta-palms":    'M0 620 h420 l0-90 h30 l0 90 h180 l0-70 h26 l0 70 h300 l0-110 h28 l0 110 h616 v40 H0 Z',
+    "tea-hills":      'M0 620 C160 480 320 560 480 500 C640 440 760 540 900 490 C1060 435 1240 545 1400 495 C1480 470 1540 500 1600 490 V620 Z',
+    "red-earth":      'M0 620 C200 570 300 600 460 575 C620 550 700 600 880 580 C1060 560 1180 605 1360 585 C1460 574 1540 600 1600 592 V620 Z',
+    "dunes-fort":     'M0 620 C220 540 380 590 520 545 L520 470 h24 v-28 h22 v28 h26 v-28 h22 v28 h24 v75 C900 600 1100 545 1300 575 C1420 592 1520 600 1600 596 V620 Z',
+    "salt-flat":      'M0 612 h700 l0-26 h40 l14-26 l14 26 h40 l0 26 h792 v8 H0 Z',
+    "deccan-fort":    'M0 620 C180 596 320 600 460 586 L470 520 h420 l10 66 C1060 600 1240 592 1420 600 C1500 604 1560 612 1600 610 V620 Z',
+    "gopuram":        'M0 620 h560 l30-40 h20 l14-46 h22 l14-46 h20 l14-44 h24 l14 44 h20 l14 46 h22 l14 46 h20 l30 40 h758 v40 H0 Z'
+  };
+  var MID = {
+    "ghat-steps":'#1B1430',"delta-palms":'#16241A',"tea-hills":'#1C2A1C',"red-earth":'#5E2F18',
+    "dunes-fort":'#6E3F1E',"salt-flat":'#C9C3B2',"deccan-fort":'#241B2E',"gopuram":'#090B1E'
+  };
+  var lands=document.getElementById('lands'), landGroups=[];
+  CH.forEach(function(c){
+    var g=el('g',{opacity:0});
+    g.appendChild(el('path',{d:LAND[c.landmark],fill:MID[c.landmark]}));
+    lands.appendChild(g); landGroups.push(g);
+  });
+
+  /* ---------- road dashes ---------- */
+  var dashG=document.getElementById('dashes'), dashes=[];
+  for(var d=0;d<11;d++){
+    var p=el('path',{fill:'#F6E8CC',opacity:.85});
+    dashG.appendChild(p); dashes.push(p);
+  }
+  function drawDashes(off){
+    for(var i=0;i<dashes.length;i++){
+      var t=((i/dashes.length)+off)%1;          // 0 = horizon, 1 = camera
+      var e=Math.pow(t,2.4);                     // perspective compression
+      var y=620+e*280, h=4+e*40, w=3+e*26;
+      dashes[i].setAttribute('d','M'+(800-w/2)+' '+y+' h'+w+' v'+h+' h-'+w+' Z');
+      dashes[i].setAttribute('opacity',(0.15+e*0.8).toFixed(3));
+    }
+  }
+
+  /* ---------- weather ---------- */
+  var rainG=document.getElementById('rain'), rainL=[];
+  for(var r=0;r<90;r++){
+    var x=Math.random()*1700-50, y=Math.random()*900;
+    var l=el('line',{x1:x,y1:y,x2:x-9,y2:y+34,stroke:'#CFE0F0','stroke-width':1.6,opacity:.55});
+    rainG.appendChild(l); rainL.push({el:l,x:x,y:y,s:420+Math.random()*420});
+  }
+  var dustG=document.getElementById('dust'), dustP=[];
+  for(var u=0;u<46;u++){
+    var cx=Math.random()*1600, cy=520+Math.random()*380, rr=18+Math.random()*70;
+    var cc=el('circle',{cx:cx,cy:cy,r:rr,fill:'#E8C38F',opacity:.16});
+    dustG.appendChild(cc); dustP.push({el:cc,x:cx,y:cy,s:14+Math.random()*44});
+  }
+  var mistG=document.getElementById('mist');
+  for(var w=0;w<7;w++)
+    mistG.appendChild(el('ellipse',{cx:200+w*230,cy:480+((w%3)*46),rx:320,ry:36,fill:'#DDDCC6',opacity:.34}));
+  var starsG=document.getElementById('stars');
+  for(var s2=0;s2<120;s2++)
+    starsG.appendChild(el('circle',{cx:Math.random()*1600,cy:Math.random()*520,r:Math.random()*1.7+0.4,fill:'#FFF8EA'}));
+
+  /* ---------- cached nodes ---------- */
+  var N={
+    skyTop:document.getElementById('skyTop'), skyBot:document.getElementById('skyBot'),
+    hazeA:document.getElementById('hazeA'), hazeB:document.getElementById('hazeB'),
+    haze:document.getElementById('haze'), ground:document.getElementById('ground'),
+    roadA:document.getElementById('roadA'), roadB:document.getElementById('roadB'),
+    sun:document.getElementById('sun'), glow:document.getElementById('sunGlowC'),
+    glowA:document.getElementById('glowA'), glowB:document.getElementById('glowB'),
+    stars:starsG, rain:rainG, dust:dustG, mist:mistG,
+    glare:document.getElementById('glare'), truck:document.getElementById('truck'),
+    lampL:document.getElementById('lampL'), lampR:document.getElementById('lampR'),
+    chains:chains, prog:document.getElementById('prog'), hud:document.getElementById('hud')
+  };
+  var sections=Array.prototype.slice.call(document.querySelectorAll('section[data-chapter]'));
+  var outro=document.getElementById('end');
+  /* The conductor forces its LAST anchor to page bottom. If we hand it only the
+     eight chapter sections, chapter 8 would not become active until the visitor
+     hits the very end of the outro. Include the outro as a ninth anchor so
+     chapter 8 owns a real span of scroll, then clamp chapter lookups to 0..7. */
+  var anchorSections=sections.concat([outro]);
+  var LAST=CH.length-1;
+  var railBtns=Array.prototype.slice.call(rail.querySelectorAll('button'));
+
+  /* ---------- resolve world state at fractional progress ---------- */
+  function world(p){
+    p=clamp(p,0,LAST);
+    var i=clamp(Math.floor(p),0,LAST), j=Math.min(LAST,i+1);
+    var t=clamp(p-i,0,1), a=CH[i].world, b=CH[j].world;
+    return {
+      skyTop:mix(a.skyTop,b.skyTop,t), skyBot:mix(a.skyBot,b.skyBot,t),
+      haze:mix(a.haze,b.haze,t), ground:mix(a.ground,b.ground,t), road:mix(a.road,b.road,t),
+      sunColor:mix(a.sunColor,b.sunColor,t),
+      sunY:lerp(a.sunY,b.sunY,t), sunR:lerp(a.sunR,b.sunR,t),
+      sunOpacity:lerp(a.sunOpacity,b.sunOpacity,t), fog:lerp(a.fog,b.fog,t),
+      rain:lerp(a.rain,b.rain,t), dust:lerp(a.dust,b.dust,t),
+      stars:lerp(a.stars,b.stars,t), glare:lerp(a.glare,b.glare,t)
+    };
+  }
+
+  /* ---------- render ---------- */
+  var lastState=null, t0=performance.now();
+  function render(st){
+    lastState=st;
+    var w=world(st.smooth);
+    N.skyTop.setAttribute('stop-color',w.skyTop);
+    N.skyBot.setAttribute('stop-color',w.skyBot);
+    N.hazeA.setAttribute('stop-color',w.haze);
+    N.hazeB.setAttribute('stop-color',w.haze);
+    N.haze.setAttribute('opacity',w.fog.toFixed(3));
+    N.ground.setAttribute('fill',w.ground);
+    N.roadA.setAttribute('stop-color',w.road);
+    N.roadB.setAttribute('stop-color',w.ground);
+
+    var sy=lerp(120,600,w.sunY);
+    N.sun.setAttribute('cy',sy); N.sun.setAttribute('r',w.sunR);
+    N.sun.setAttribute('fill',w.sunColor); N.sun.setAttribute('opacity',w.sunOpacity.toFixed(3));
+    N.glow.setAttribute('cy',sy); N.glow.setAttribute('r',w.sunR*4.2);
+    N.glowA.setAttribute('stop-color',w.sunColor); N.glowB.setAttribute('stop-color',w.sunColor);
+    N.glow.setAttribute('opacity',(w.sunOpacity*0.9).toFixed(3));
+
+    N.stars.setAttribute('opacity',w.stars.toFixed(3));
+    N.rain.setAttribute('opacity',w.rain.toFixed(3));
+    N.dust.setAttribute('opacity',w.dust.toFixed(3));
+    N.mist.setAttribute('opacity',clamp((w.fog-0.35)*1.9,0,1).toFixed(3));
+    N.glare.setAttribute('opacity',(w.glare*0.3).toFixed(3));
+
+    // landmarks crossfade + parallax past the camera
+    for(var i=0;i<landGroups.length;i++){
+      var dist=st.smooth-i;
+      var o=clamp(1-Math.abs(dist)*1.05,0,1);
+      landGroups[i].setAttribute('opacity',o.toFixed(3));
+      landGroups[i].setAttribute('transform','translate('+(-dist*190).toFixed(1)+' '+(dist*26).toFixed(1)+') scale('+(1+Math.max(0,dist)*0.12).toFixed(3)+' 1)');
+    }
+
+    drawDashes((st.smooth*0.55)%1);
+
+    // truck: recedes slightly mid-leg, settles at each chapter
+    var localBump=Math.sin(clamp(st.localSmooth,0,1)*Math.PI);
+    var sc=1-localBump*0.06;
+    N.truck.setAttribute('transform','translate(800 '+(640-localBump*8).toFixed(1)+') scale('+sc.toFixed(4)+')');
+
+    // tail lights burn at night
+    var lamp=clamp(w.stars*1.2,0.15,1);
+    N.lampL.setAttribute('fill',mix('#8A1B14','#FF4438',lamp));
+    N.lampR.setAttribute('fill',mix('#8A1B14','#FF4438',lamp));
+
+    N.prog.style.width=(clamp(st.smooth/LAST,0,1)*100).toFixed(2)+'%';
+    var ci=clamp(st.index,0,LAST);
+    N.hud.textContent='p '+st.smooth.toFixed(2)+'  ·  '+CH[ci].id+'  ·  '+CH[ci].time;
+  }
+
+  function onChapter(idx){
+    var ci=clamp(idx,0,LAST);
+    sections.forEach(function(s,i){s.classList.toggle('is-active',i===ci);});
+    railBtns.forEach(function(b,i){b.setAttribute('aria-current',i===ci?'true':'false');});
+  }
+
+  /* ---------- ambient loop (chains sway, rain falls, dust drifts) ---------- */
+  var raf=0;
+  function ambient(now){
+    var t=(now-t0)/1000;
+    var sway=Math.sin(t*1.7)*3.2;
+    N.chains.setAttribute('transform','rotate('+sway.toFixed(2)+' 0 218)');
+    if(lastState){
+      var w=world(lastState.smooth);
+      if(w.rain>0.02){
+        for(var i=0;i<rainL.length;i++){var R=rainL[i];
+          R.y=(R.y+R.s*0.016)%960; R.x-=0.8; if(R.x<-60)R.x=1660;
+          R.el.setAttribute('y1',R.y);R.el.setAttribute('y2',R.y+34);
+          R.el.setAttribute('x1',R.x);R.el.setAttribute('x2',R.x-9);}
+      }
+      if(w.dust>0.02){
+        for(var j=0;j<dustP.length;j++){var D=dustP[j];
+          D.x-=D.s*0.016; if(D.x<-90)D.x=1690; D.el.setAttribute('cx',D.x.toFixed(1));}
+      }
+    }
+    raf=requestAnimationFrame(ambient);
+  }
+
+  /* ---------- start ---------- */
+  var conductor=createScrollConductor({
+    sections:anchorSections, damping:5.2, reducedMotion:reduce,
+    onUpdate:render, onChapterChange:onChapter
+  });
+
+  function boot(){
+    conductor.start();
+    render(conductor.getState());
+    onChapter(conductor.getState().index);
+    if(!reduce) raf=requestAnimationFrame(ambient);
+  }
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){conductor.measure();boot();});}
+  else boot();
+
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){cancelAnimationFrame(raf);raf=0;}
+    else if(!reduce&&!raf){t0=performance.now();raf=requestAnimationFrame(ambient);}
+  });
+  window.punnah={conductor:conductor,chapters:CH};
+})();
+</script>
+</body>
+</html>
